@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+  <name>FIX Duplicate items in cart</name>
+  <code>fixDuplicateItemsinCart</code>
+	<version>1.0</version>
+	<author>REDS</author>
+	<link>https://www.agenciaprai.com/</link>
+	<info>https://forum.opencart.com/viewtopic.php?t=211273</info>
+		
+	<file path="system/library/cart/cart.php">
+		<operation error="log">
+			<search><![CDATA[if ($this->customer->getId()) {]]></search>
+			<add position="before"><![CDATA[
+				// Renew Session id old items
+				public function renew_session_id_old_items ($customer_id) {
+					$sql = "UPDATE " . DB_PREFIX . "cart SET session_id = '" . $this->db->escape($this->session->getId()) . "' WHERE api_id = '0' AND customer_id = '" . (int)$customer_id . "'";
+					$this->db->query($sql);
+				}
+				
+				// Transfer items to new customer
+				public function transfer_items_to_new_customer ($customer_id) {
+					// Once the customer is logged in we want to update the customers cart
+					$sql = "SELECT * FROM " . DB_PREFIX . "cart WHERE api_id = '0' AND customer_id = '0' AND session_id = '" . $this->db->escape($this->session->getId()) . "'";
+					$cart_save_query = $this->db->query($sql);
+					foreach ($cart_save_query->rows as $cart) {
+						$sql = "DELETE FROM " . DB_PREFIX . "cart WHERE cart_id = '" . (int)$cart['cart_id'] . "'";
+						$this->db->query($sql);
+						$this->add($cart['product_id'], $cart['quantity'], json_decode($cart['option']), $cart['recurring_id']);
+					}
+				}
+			]]></add>
+		</operation>
+	</file>
+	
+	<file path="catalog/controller/checkout/login.php|catalog/controller/account/login.php">
+		<operation error="log">
+			<search><![CDATA[unset($this->session->data['guest']);]]></search>
+			<add position="after"><![CDATA[
+			// change[662] giving old cart items of the customer the current session id
+			$this->cart->renew_session_id_old_items ($this->customer->getId());
+			
+			// change[662] assigning the current guest cart items to the customer
+			$this->cart->transfer_items_to_new_customer ($this->customer->getId());
+			]]></add>
+		</operation>
+	</file>
+	<file path="catalog/controller/checkout/register.php|catalog/controller/account/register.php">
+		<operation error="log">
+			<search><![CDATA[unset($this->session->data['guest']);]]></search>
+			<add position="after"><![CDATA[
+			/// change[662] assigning the current guest cart items to the customer
+			$this->cart->transfer_items_to_new_customer ($this->customer->getId());
+			]]></add>
+		</operation>
+	</file>
+	
+	<!--file path="catalog/controller/account/login.php">
+		<operation error="log">
+			<search><![CDATA[unset($this->session->data['guest']);]]></search>
+			<add position="after"><![CDATA[
+			// change[662] giving old cart items of the customer the current session id
+			$this->cart->renew_session_id_old_items ($this->customer->getId());
+			
+			// change[662] assigning the current guest cart items to the customer
+			$this->cart->transfer_items_to_new_customer ($this->customer->getId());
+			]]></add>
+		</operation>
+	</file-->
+	<!--file path="catalog/controller/account/register.php">
+		<operation error="log">
+			<search><![CDATA[unset($this->session->data['guest']);]]></search>
+			<add position="after"><![CDATA[
+			// change[662] assigning the current guest cart items to the customer
+			$this->cart->transfer_items_to_new_customer ($this->customer->getId());
+			]]></add>
+		</operation>
+	</file-->
+</modification>
