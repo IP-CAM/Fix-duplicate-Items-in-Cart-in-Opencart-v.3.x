@@ -9,7 +9,7 @@
 		
 	<file path="system/library/cart/cart.php">
 		<operation error="log">
-			<search><![CDATA[if ($this->customer->getId()) {]]></search>
+			<search><![CDATA[public function getProducts() {]]></search>
 			<add position="before"><![CDATA[
 				// Renew Session id old items
 				public function renew_session_id_old_items ($customer_id) {
