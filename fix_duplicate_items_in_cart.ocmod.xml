@@ -9,8 +9,8 @@
 		
 	<file path="system/library/cart/cart.php">
 		<operation error="log">
-			<search><![CDATA[public function getProducts() {]]></search>
-			<add position="before"><![CDATA[
+			<search><![CDATA[private $data = array();]]></search>
+			<add position="after"><![CDATA[
 				// Renew Session id old items
 				public function renew_session_id_old_items ($customer_id) {
 					$sql = "UPDATE " . DB_PREFIX . "cart SET session_id = '" . $this->db->escape($this->session->getId()) . "' WHERE api_id = '0' AND customer_id = '" . (int)$customer_id . "'";
